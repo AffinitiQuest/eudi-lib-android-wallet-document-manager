@@ -16,8 +16,10 @@
 
 package eu.europa.ec.eudi.wallet.document.format
 
+import eu.europa.ec.eudi.wallet.document.ClaimName
 import eu.europa.ec.eudi.wallet.document.DocType
 import eu.europa.ec.eudi.wallet.document.Vct
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 
 /**
  * Represents a Document Format
@@ -35,3 +37,14 @@ data class MsoMdocFormat(val docType: DocType) : DocumentFormat
  * @property vct the Vct of the document
  */
 data class SdJwtVcFormat(val vct: Vct) : DocumentFormat
+
+/**
+ * Represents a W3CJwt Format for a [eu.europa.ec.eudi.wallet.document.Document]
+ * @property credentialDefinition the credential definition of the document
+ */
+data class W3CJwtFormat(val types: List<String>): DocumentFormat
+
+//data class CredentialDefinition(
+//    val type: List<String>,
+//    val credentialSubject: Map<ClaimName, DocumentMetaData.Claim?>?,
+//)

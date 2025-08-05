@@ -28,6 +28,8 @@ import eu.europa.ec.eudi.wallet.document.format.MsoMdocData
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcData
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtData
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
 import kotlinx.datetime.toJavaInstant
 import kotlinx.serialization.SerializationException
@@ -194,6 +196,7 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
     val documentFormat: DocumentFormat = when (credential) {
         is MdocCredential -> MsoMdocFormat(credential.docType)
         is SdJwtVcCredential -> SdJwtVcFormat(credential.vct)
+        is W3CJwtCredential -> W3CJwtFormat(credential.types)
         else -> throw IllegalArgumentException("Unsupported format type: ${credential::class}")
     }
 
@@ -235,6 +238,12 @@ internal inline fun <reified D : Document> IdentityDocument.toDocument(): D {
                     format = documentFormat,
                     sdJwtVc = credential.issuerProvidedData.sdJwtVcString,
                     metadata = metadata,
+                )
+
+                is W3CJwtFormat -> W3CJwtData(
+                    format = documentFormat,
+                    w3cJwt = credential.issuerProvidedData.sdJwtVcString,
+                    metadata = metadata
                 )
             }
         )

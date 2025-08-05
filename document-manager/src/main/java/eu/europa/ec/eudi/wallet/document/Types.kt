@@ -16,6 +16,8 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import eu.europa.ec.eudi.wallet.document.metadata.DocumentMetaData
+
 
 typealias DocumentId = String
 typealias DocType = String
@@ -26,4 +28,5 @@ typealias NameSpacedValues<T> = Map<NameSpace, Map<ElementIdentifier, T>>
 typealias ProofOfDeletion = ByteArray
 typealias SharedSecret = ByteArray
 typealias Vct = String
+typealias ClaimName = String
 

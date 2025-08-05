@@ -235,6 +235,79 @@ data class SdJwtVcData(
 }
 
 /**
+ * Represents the claims of a document in the SdJwtVc format.
+ * @property format The SdJwtVc format containing the vct
+ * @property sdJwtVc The SdJwtVc.
+ * @property claims The list of claims.
+ * @property metadata The metadata of the document.
+ *
+ */
+data class W3CJwtData(
+    override val format: W3CJwtFormat,
+    override val metadata: DocumentMetaData?,
+    val w3cJwt: String
+) : DocumentData {
+    override val claims: List<SdJwtVcClaim> by lazy {
+        val (claims, disclosuresPerClaim) = DefaultSdJwtOps.unverifiedIssuanceFrom(w3cJwt)
+            .getOrThrow().recreateClaimsAndDisclosuresPerClaim()
+
+        // Filter out paths that are excluded from claims
+        val filteredDisclosuresPerClaim = disclosuresPerClaim
+            .filterNot { (path, _) -> path.head().toString() in ExcludedIdentifiers }
+
+        // create the list of claims that will be returned
+        // and populate it with the claims and their children
+        mutableListOf<MutableSdJwtClaim>().also { sdJwtVcClaims ->
+
+            for ((path, disclosures) in filteredDisclosuresPerClaim) {
+                val value = claims.select(path).getOrNull()
+                val selectivelyDisclosable = disclosures.isNotEmpty()
+
+                // start from the root of the list of claims
+                var current = sdJwtVcClaims
+
+                for (key in path.value) {
+                    // check if the current path element is already present in the current list of claims
+                    val existingNode = current.find { it.identifier == key.toString() }
+
+                    // if the path element is already present, move to the children of the existing node
+                    if (existingNode != null) {
+                        current = existingNode.children
+                    } else {
+                        // if the path element is not present, create a new claim and add it to the current list of claims
+                        val metadataClaimName = DocumentMetaData.Claim.Name.SdJwtVc(
+                            name = key.toString()
+                        )
+                        val newClaim = MutableSdJwtClaim(
+                            identifier = key.toString(),
+                            value = value?.parse(),
+                            rawValue = value?.toString() ?: "",
+                            selectivelyDisclosable = selectivelyDisclosable,
+                            metadata = metadata?.claims?.find { it.name == metadataClaimName }
+                        )
+                        // add the new claim to the current list of claims
+                        current.add(newClaim)
+                        // set the current list of claims to the children of the new claim
+                        current = newClaim.children
+                    }
+                }
+            }
+        }.map { it.toSdJwtVcClaim() }
+    }
+
+    companion object {
+        internal val ExcludedIdentifiers = arrayOf(
+            "cnf",
+            "iss",
+            "vct",
+            "aud",
+            "status",
+            "assurance_level",
+        )
+    }
+}
+
+/**
  * Represents a claim of a document in the SdJwtVc format.
  * @property identifier The identifier of the claim.
  * @property value The value of the claim.

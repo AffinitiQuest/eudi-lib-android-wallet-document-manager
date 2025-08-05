@@ -26,7 +26,9 @@ import com.android.identity.util.UUID
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import eu.europa.ec.eudi.wallet.document.internal.SdJwtVcCredential
+import eu.europa.ec.eudi.wallet.document.internal.W3CJwtCredential
 import eu.europa.ec.eudi.wallet.document.internal.clearDeferredRelatedData
 import eu.europa.ec.eudi.wallet.document.internal.createCredential
 import eu.europa.ec.eudi.wallet.document.internal.createdAt
@@ -81,6 +83,9 @@ class DocumentManagerImpl(
                 }
                 addCredentialImplementation(SdJwtVcCredential::class) { document, dataItem ->
                     SdJwtVcCredential(document, dataItem)
+                }
+                addCredentialImplementation(W3CJwtCredential::class) { document, dataItem ->
+                    W3CJwtCredential(document, dataItem)
                 }
             })
     }
@@ -181,6 +186,13 @@ class DocumentManagerImpl(
                     )
                     identityDocument.documentName = format.vct
                 }
+
+                is W3CJwtFormat -> {
+                    format.createCredential(
+                        domain, identityDocument, secureArea, createSettings.createKeySettings
+                    )
+                    identityDocument.documentName = format.types.last()
+                }
             }
 
             documentStore.addDocument(identityDocument)
@@ -216,6 +228,14 @@ class DocumentManagerImpl(
                 )
 
                 is SdJwtVcFormat -> format.storeIssuedDocument(
+                    unsignedDocument,
+                    identityDocument,
+                    issuerProvidedData,
+                    checkDevicePublicKey,
+                    ktorHttpClientFactory
+                )
+
+                is W3CJwtFormat -> format.storeIssuedDocument(
                     unsignedDocument,
                     identityDocument,
                     issuerProvidedData,
