@@ -183,6 +183,15 @@ data class DocumentMetaData(
             data class SdJwtVc(
                 override val name: String
             ) : Name
+
+            /**
+             * W3CJwt claim name.
+             * @property name the name of the claim
+             */
+            @Serializable
+            data class W3CJwtVc(
+                override val name: String
+            ) : Name
         }
 
         /**

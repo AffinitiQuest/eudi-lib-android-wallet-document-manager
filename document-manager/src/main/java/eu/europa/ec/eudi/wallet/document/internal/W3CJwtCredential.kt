@@ -1,7 +1,5 @@
 package eu.europa.ec.eudi.wallet.document.internal
 
-import co.nstant.`in`.cbor.CborEncoder
-import com.android.identity.cbor.Cbor
 import com.android.identity.cbor.CborBuilder
 import com.android.identity.cbor.DataItem
 import com.android.identity.cbor.MapBuilder
