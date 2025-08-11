@@ -273,11 +273,11 @@ data class W3CJwtData(
     override val claims: List<W3CJwtVcClaim> by lazy {
         val (header, body, signature) = w3cJwtClaims(w3cJwt).getOrThrow()
         val vc = body.jsonObject["vc"]
-        val claims2 = vc?.jsonObject["credentialSubject"]
+        val claims = vc?.jsonObject["credentialSubject"]
         val claimList = mutableListOf<W3CJwtVcClaim>()
-        if(claims2 is JsonObject) {
-            for(claimKey in claims2.jsonObject.keys) {
-                val claim = claims2[claimKey]
+        if(claims is JsonObject) {
+            for(claimKey in claims.jsonObject.keys) {
+                val claim = claims[claimKey]
 
                 val metadataClaimName = DocumentMetaData.Claim.Name.W3CJwtVc(
                     name = claimKey
