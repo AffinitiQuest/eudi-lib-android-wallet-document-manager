@@ -220,8 +220,13 @@ internal object LocaleSerializer : KSerializer<Locale> {
     override fun deserialize(decoder: Decoder): Locale =
         Locale.forLanguageTag(decoder.decodeString())
 
-    override fun serialize(encoder: Encoder, value: Locale) =
-        encoder.encodeString(value.toLanguageTag())
+    override fun serialize(encoder: Encoder, value: Locale) {
+        var valueToSubmit = value.toString()
+        if (value.toString().contains('_')) {
+            valueToSubmit = value.toLanguageTag()
+        }
+        encoder.encodeString(valueToSubmit)
+    }
 }
 
 /**
