@@ -10,3 +10,4 @@
 local.properties
 /app/release/
 /.kotlin/errors/
+maven.properties
