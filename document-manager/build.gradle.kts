@@ -97,6 +97,10 @@ android {
             "-opt-in=kotlin.ExperimentalApi"
         )
     }
+
+    signing {
+        isRequired = false
+    }
 }
 
 dependencies {
