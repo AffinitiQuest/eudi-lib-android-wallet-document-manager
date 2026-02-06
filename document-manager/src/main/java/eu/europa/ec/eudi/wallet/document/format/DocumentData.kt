@@ -18,6 +18,10 @@ package eu.europa.ec.eudi.wallet.document.format
 
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps.recreateClaimsAndDisclosuresPerClaim
+import eu.europa.ec.eudi.sdjwt.Jwt
+import eu.europa.ec.eudi.sdjwt.JwtBase64
+import eu.europa.ec.eudi.sdjwt.VerificationError
+import eu.europa.ec.eudi.sdjwt.asException
 import eu.europa.ec.eudi.sdjwt.vc.SelectPath.Default.select
 import eu.europa.ec.eudi.wallet.document.NameSpace
 import eu.europa.ec.eudi.wallet.document.NameSpacedValues
@@ -29,6 +33,9 @@ import eu.europa.ec.eudi.wallet.document.internal.toObject
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import org.multipaz.cbor.Cbor
 import org.multipaz.document.NameSpacedData
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 /**
  * Represents the claims of a document.
@@ -57,6 +64,12 @@ sealed interface DocumentData {
                 is SdJwtVcFormat -> SdJwtVcData(
                     format = format,
                     sdJwtVc = issuerProvidedData.sdJwtVcString,
+                    issuerMetadata = issuerMetadata
+                )
+
+                is W3CJwtFormat -> W3CJwtData(
+                    format = format,
+                    w3cJwt = issuerProvidedData.sdJwtVcString,
                     issuerMetadata = issuerMetadata
                 )
             }
@@ -290,6 +303,112 @@ internal class MutableSdJwtClaim(
             issuerMetadata = metadata,
             selectivelyDisclosable = selectivelyDisclosable,
             children = children.map { it.toSdJwtVcClaim() }
+        )
+    }
+}
+
+internal fun w3cJwtClaims(jwt: Jwt): Result<Triple<JsonObject, JsonObject, String>> = runCatching {
+    fun json(s: String): JsonObject {
+        val decoded = JwtBase64.decode(s).toString(Charsets.UTF_8)
+        return Json.parseToJsonElement(decoded).jsonObject
+    }
+    val (h, p, s) = w3cJwtsplitJwt(jwt).getOrThrow()
+    Triple(json(h), json(p), s)
+}
+
+private fun w3cJwtsplitJwt(jwt: Jwt): Result<Triple<String, String, String>> = runCatching {
+    val ps = jwt.split(".")
+    if (ps.size != 3) throw VerificationError.InvalidJwt.asException()
+    val (h, p, s) = jwt.split(".")
+    Triple(h, p, s)
+}
+
+/**
+ * Represents the claims of a document in the SdJwtVc format.
+ * @property format The SdJwtVc format containing the vct
+ * @property sdJwtVc The SdJwtVc.
+ * @property claims The list of claims.
+ * @property metadata The metadata of the document.
+ *
+ */
+data class W3CJwtData(
+    override val format: W3CJwtFormat,
+    override val issuerMetadata: IssuerMetadata?,
+    val w3cJwt: String,
+) : DocumentData {
+    override val claims: List<W3CJwtVcClaim> by lazy {
+        val (header, body, signature) = w3cJwtClaims(w3cJwt).getOrThrow()
+        val vc = body.jsonObject["vc"]
+        val claims = vc?.jsonObject["credentialSubject"]
+        val claimList = mutableListOf<W3CJwtVcClaim>()
+        if(claims is JsonObject) {
+            for(claimKey in claims.jsonObject.keys) {
+                val claim = claims[claimKey]
+
+                val metadataClaimName = IssuerMetadata.Claim(
+                    path = listOf("someString", claimKey)
+                )
+
+                val newClaim = MutableW3CJwtClaim(
+                    identifier = claimKey,
+                    value = claim?.parse(),
+                    rawValue = claim?.toString() ?: "",
+                    issuerMetadata = issuerMetadata?.claims?.find { it.path == metadataClaimName }
+                )
+
+                claimList.add(newClaim.toW3CJwtVcClaim())
+            }
+        }
+
+        claimList
+    }
+
+    companion object {
+        internal val ExcludedIdentifiers = arrayOf(
+            "cnf",
+            "iss",
+            "vct",
+            "aud",
+            "status",
+            "assurance_level",
+        )
+    }
+}
+
+/**
+ * Represents a claim of a document in the W3CJwtVc format.
+ * @property identifier The identifier of the claim.
+ * @property value The value of the claim.
+ * @property rawValue The raw value of the claim.
+ * @property children The children of the claim.
+ * @property metadata The metadata of the claim.
+ */
+data class W3CJwtVcClaim(
+    override val identifier: String,
+    override val value: Any?,
+    override val rawValue: String,
+    override val issuerMetadata: IssuerMetadata.Claim?,
+    val children: List<W3CJwtVcClaim>
+) : DocumentClaim(identifier, value, rawValue, issuerMetadata)
+
+/**
+ * Internal class for W3CJwtVcClaim that can be mutated.
+ * Mutation is needed to build the list of claims.
+ */
+internal class MutableW3CJwtClaim(
+    val identifier: String,
+    val value: Any?,
+    val rawValue: String,
+    val issuerMetadata: IssuerMetadata.Claim?,
+    val children: MutableList<MutableW3CJwtClaim> = mutableListOf()
+) {
+    fun toW3CJwtVcClaim(): W3CJwtVcClaim {
+        return W3CJwtVcClaim(
+            identifier = identifier,
+            value = value,
+            rawValue = rawValue.toString(),
+            issuerMetadata = issuerMetadata,
+            children = children.map { it.toW3CJwtVcClaim() }
         )
     }
 }

@@ -20,6 +20,7 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborMap
 import org.multipaz.cbor.DataItem
@@ -116,6 +117,7 @@ internal fun DocumentFormat.toDataItem(): DataItem {
         when (this@toDataItem) {
             is MsoMdocFormat -> put("docType", docType)
             is SdJwtVcFormat -> put("vct", vct)
+            is W3CJwtFormat -> put("types", types.last())
         }
     }
 }
@@ -139,6 +141,7 @@ internal fun DocumentFormat.Companion.fromDataItem(dataItem: DataItem): Document
     return when {
         dataItem.hasKey("docType") -> MsoMdocFormat(docType = dataItem["docType"].asTstr)
         dataItem.hasKey("vct") -> SdJwtVcFormat(vct = dataItem["vct"].asTstr)
+        dataItem.hasKey("types") -> W3CJwtFormat(types = listOf(dataItem["types"].asTstr) )
         else -> throw IllegalArgumentException("Unknown DocumentFormat type")
     }
 }

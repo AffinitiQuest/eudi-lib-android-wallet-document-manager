@@ -37,3 +37,9 @@ data class MsoMdocFormat(val docType: DocType) : DocumentFormat
  * @property vct the Vct of the document
  */
 data class SdJwtVcFormat(val vct: Vct) : DocumentFormat
+
+/**
+ * Represents a W3CJwt Format for a [eu.europa.ec.eudi.wallet.document.Document]
+ * @property credentialDefinition the credential definition of the document
+ */
+data class W3CJwtFormat(val types: List<String>) : DocumentFormat

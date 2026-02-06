@@ -20,10 +20,13 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.Document
 import org.multipaz.mdoc.credential.MdocCredential
 import org.multipaz.sdjwt.credential.KeyBoundSdJwtVcCredential
+import org.multipaz.sdjwt.credential.KeyBoundW3CJwtVcCredential
+import org.multipaz.sdjwt.credential.W3CJwtVcCredential
 import org.multipaz.securearea.SecureArea
 
 /**
@@ -59,6 +62,7 @@ fun interface CredentialFactory {
             return when (format) {
                 is MsoMdocFormat -> MdocCredentialFactory(domain)
                 is SdJwtVcFormat -> SdJwtVcCredentialFactory(domain)
+                is W3CJwtFormat -> JwtVcCredentialFactory(domain)
             }
         }
     }
@@ -139,6 +143,44 @@ class SdJwtVcCredentialFactory(val domain: String) :
             createKeySettings = createDocumentSettings.createKeySettings
         )
 
+    }
+}
+
+/**
+ * Implementation of CredentialFactory for creating SD-JWT VC (Selective Disclosure JWT Verifiable Credentials) according to RFC 9401.
+ *
+ * @property domain the domain for the credentials
+ */
+class JwtVcCredentialFactory(val domain: String) :
+    CredentialFactory {
+    /**
+     * Creates SD-JWT VC credentials for a document based on SD-JWT VC format settings.
+     *
+     * @param format the document format, must be an instance of SdJwtVcFormat
+     * @param document the document that will contain the credentials
+     * @param createDocumentSettings settings for creating the document credentials
+     * @param secureArea the secure area for storing cryptographic keys
+     * @return a list of SdJwtVcCredential instances bound to the document
+     * @throws IllegalArgumentException if the provided format is not an instance of SdJwtVcFormat
+     */
+    override suspend fun createCredentials(
+        format: DocumentFormat,
+        document: Document,
+        createDocumentSettings: CreateDocumentSettings,
+        secureArea: SecureArea
+    ): Pair<List<KeyBoundW3CJwtVcCredential>, String?> {
+        require(format is W3CJwtFormat) {
+            "Expected ${W3CJwtFormat::class}"
+        }
+
+        return KeyBoundW3CJwtVcCredential.createBatch(
+            numberOfCredentials = createDocumentSettings.numberOfCredentials,
+            document = document,
+            domain = domain,
+            secureArea = secureArea,
+            types = format.types,
+            createKeySettings = createDocumentSettings.createKeySettings
+        )
     }
 }
 

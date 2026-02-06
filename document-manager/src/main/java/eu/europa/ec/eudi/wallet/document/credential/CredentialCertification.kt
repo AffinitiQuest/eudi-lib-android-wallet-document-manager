@@ -19,6 +19,7 @@ package eu.europa.ec.eudi.wallet.document.credential
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import org.multipaz.credential.SecureAreaBoundCredential
 
 fun interface CredentialCertification {
@@ -33,6 +34,7 @@ fun interface CredentialCertification {
             return when (format) {
                 is MsoMdocFormat -> MsoMdocCredentialCertifier()
                 is SdJwtVcFormat -> SdJwtVcCredentialCertifier()
+                is W3CJwtFormat -> JwtVcCredentialCertifier()
             }
         }
     }

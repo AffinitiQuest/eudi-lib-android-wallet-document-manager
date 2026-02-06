@@ -22,6 +22,7 @@ import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetadata
 import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
 import eu.europa.ec.eudi.wallet.document.internal.documentManagerId
@@ -33,6 +34,9 @@ import kotlinx.io.bytestring.ByteString
 import org.jetbrains.annotations.VisibleForTesting
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.buildDocumentStore
+import org.multipaz.mdoc.credential.MdocCredential
+import org.multipaz.sdjwt.credential.KeyBoundW3CJwtVcCredential
+import org.multipaz.sdjwt.credential.W3CJwtVcCredential
 import org.multipaz.securearea.SecureAreaRepository
 import org.multipaz.storage.Storage
 import org.multipaz.util.Logger
@@ -102,6 +106,7 @@ class DocumentManagerImpl(
             secureAreaRepository = secureAreaRepository,
         ) {
             setDocumentMetadataFactory(ApplicationMetadata::create)
+            addCredentialImplementation(KeyBoundW3CJwtVcCredential.CREDENTIAL_TYPE, { document -> KeyBoundW3CJwtVcCredential(document) })
         }
     }
 
@@ -197,6 +202,7 @@ class DocumentManagerImpl(
                         documentName = when (format) {
                             is MsoMdocFormat -> format.docType
                             is SdJwtVcFormat -> format.vct
+                            is W3CJwtFormat -> format.types.last()
                         },
                         createdAt = Clock.System.now(),
                         issuerMetadata = issuerMetadata,
