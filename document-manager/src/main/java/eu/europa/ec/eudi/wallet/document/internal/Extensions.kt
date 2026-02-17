@@ -64,6 +64,9 @@ internal val ByteArray.toEcPublicKey: EcPublicKey
 internal val ByteArray.sdJwtVcString: String
     get() = String(this, charset = Charsets.US_ASCII)
 
+internal val ByteArray.jwtVcString: String
+    get() = String(this, charset = Charsets.US_ASCII)
+
 /**
  * Converts a CredentialPolicy to a CBOR DataItem for serialization.
  *
