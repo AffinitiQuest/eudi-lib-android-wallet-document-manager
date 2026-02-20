@@ -25,6 +25,7 @@ import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborMap
 import org.multipaz.cbor.DataItem
 import org.multipaz.cbor.buildCborMap
+import org.multipaz.cbor.putCborArray
 import org.multipaz.crypto.EcPublicKey
 
 /**
@@ -120,7 +121,9 @@ internal fun DocumentFormat.toDataItem(): DataItem {
         when (this@toDataItem) {
             is MsoMdocFormat -> put("docType", docType)
             is SdJwtVcFormat -> put("vct", vct)
-            is W3CJwtFormat -> put("types", types.last())
+            is W3CJwtFormat -> putCborArray("types") {
+                types.forEach { add(it) }
+            }
         }
     }
 }
