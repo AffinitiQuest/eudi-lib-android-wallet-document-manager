@@ -26,6 +26,7 @@ import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborMap
 import org.multipaz.cbor.DataItem
 import org.multipaz.cbor.buildCborMap
+import org.multipaz.cbor.putCborArray
 import org.multipaz.crypto.EcPublicKey
 
 /**
@@ -63,6 +64,9 @@ internal val ByteArray.toEcPublicKey: EcPublicKey
  * @return String representation of the SD-JWT VC data encoded using US-ASCII charset
  */
 internal val ByteArray.sdJwtVcString: String
+    get() = String(this, charset = Charsets.US_ASCII)
+
+internal val ByteArray.jwtVcString: String
     get() = String(this, charset = Charsets.US_ASCII)
 
 /**
@@ -118,7 +122,9 @@ internal fun DocumentFormat.toDataItem(): DataItem {
         when (this@toDataItem) {
             is MsoMdocFormat -> put("docType", docType)
             is SdJwtVcFormat -> put("vct", vct)
-            is W3CJwtFormat -> put("types", types.last())
+            is W3CJwtFormat -> putCborArray("types") {
+                types.forEach { add(it) }
+            }
             is LdpVcFormat -> put("ldpTypes", types.last())
         }
     }
