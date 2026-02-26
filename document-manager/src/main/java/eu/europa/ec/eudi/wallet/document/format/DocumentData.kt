@@ -30,6 +30,7 @@ import eu.europa.ec.eudi.wallet.document.credential.fromIssuerProvidedData
 import eu.europa.ec.eudi.wallet.document.internal.parse
 import eu.europa.ec.eudi.wallet.document.internal.sdJwtVcString
 import eu.europa.ec.eudi.wallet.document.internal.toObject
+import kotlinx.serialization.json.JsonElement
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import org.multipaz.cbor.Cbor
 import org.multipaz.document.NameSpacedData
@@ -70,6 +71,12 @@ sealed interface DocumentData {
                 is W3CJwtFormat -> W3CJwtData(
                     format = format,
                     w3cJwt = issuerProvidedData.sdJwtVcString,
+                    issuerMetadata = issuerMetadata
+                )
+
+                is LdpVcFormat -> LdpVcData(
+                    format = format,
+                    ldpVc = issuerProvidedData.sdJwtVcString,
                     issuerMetadata = issuerMetadata
                 )
             }
@@ -412,3 +419,54 @@ internal class MutableW3CJwtClaim(
         )
     }
 }
+
+/**
+ * Represents the claims of a document in the LDP VC (Linked Data Proof) format.
+ * @property format The LDP VC format containing the credential types
+ * @property ldpVc The JSON-LD document string containing the Verifiable Credential
+ * @property claims The list of claims extracted from credentialSubject
+ * @property issuerMetadata The metadata of the document provided by the issuer
+ */
+data class LdpVcData(
+    override val format: LdpVcFormat,
+    override val issuerMetadata: IssuerMetadata?,
+    val ldpVc: String,
+) : DocumentData {
+    override val claims: List<LdpVcClaim> by lazy {
+        val document = Json.parseToJsonElement(ldpVc).jsonObject
+        val claims = document["credentialSubject"]
+        val claimList = mutableListOf<LdpVcClaim>()
+        if (claims is JsonObject) {
+            for (claimKey in claims.jsonObject.keys) {
+                val claim = claims[claimKey]
+                if (claim != null) {
+                    claimList.add(
+                        LdpVcClaim(
+                            identifier = claimKey,
+                            value = claim.parse(),
+                            rawValue = claim.toString(),
+                            issuerMetadata = issuerMetadata?.claims?.find {
+                                it.path == listOf("credentialSubject", claimKey)
+                            }
+                        )
+                    )
+                }
+            }
+        }
+        claimList
+    }
+}
+
+/**
+ * Represents a claim of a document in the LDP VC format.
+ * @property identifier The identifier of the claim.
+ * @property value The value of the claim.
+ * @property rawValue The raw value of the claim.
+ * @property issuerMetadata The metadata of the claim provided by the issuer.
+ */
+data class LdpVcClaim(
+    override val identifier: String,
+    override val value: Any?,
+    override val rawValue: String,
+    override val issuerMetadata: IssuerMetadata.Claim?,
+) : DocumentClaim(identifier, value, rawValue, issuerMetadata)
