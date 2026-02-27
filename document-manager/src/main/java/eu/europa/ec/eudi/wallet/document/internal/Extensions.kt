@@ -20,6 +20,7 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.LdpVcFormat
 import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborMap
@@ -124,6 +125,7 @@ internal fun DocumentFormat.toDataItem(): DataItem {
             is W3CJwtFormat -> putCborArray("types") {
                 types.forEach { add(it) }
             }
+            is LdpVcFormat -> put("ldpTypes", types.last())
         }
     }
 }
@@ -148,6 +150,7 @@ internal fun DocumentFormat.Companion.fromDataItem(dataItem: DataItem): Document
         dataItem.hasKey("docType") -> MsoMdocFormat(docType = dataItem["docType"].asTstr)
         dataItem.hasKey("vct") -> SdJwtVcFormat(vct = dataItem["vct"].asTstr)
         dataItem.hasKey("types") -> W3CJwtFormat(types = listOf(dataItem["types"].asTstr) )
+        dataItem.hasKey("ldpTypes") -> LdpVcFormat(types = listOf(dataItem["ldpTypes"].asTstr) )
         else -> throw IllegalArgumentException("Unknown DocumentFormat type")
     }
 }

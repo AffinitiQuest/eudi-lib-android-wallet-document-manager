@@ -20,6 +20,7 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.LdpVcFormat
 import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata
 import eu.europa.ec.eudi.wallet.document.metadata.IssuerMetadata.Companion.fromJson
@@ -212,6 +213,7 @@ internal class ApplicationMetadataImpl private constructor(
             is MsoMdocFormat -> (format as MsoMdocFormat).docType
             is SdJwtVcFormat -> (format as SdJwtVcFormat).vct
             is W3CJwtFormat -> (format as W3CJwtFormat).types.first()
+            is LdpVcFormat -> (format as LdpVcFormat).types.first()
         }
     override val keyAttestation: String?
         get() = data.keyAttestation

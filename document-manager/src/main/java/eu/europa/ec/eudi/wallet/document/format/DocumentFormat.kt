@@ -43,3 +43,9 @@ data class SdJwtVcFormat(val vct: Vct) : DocumentFormat
  * @property credentialDefinition the credential definition of the document
  */
 data class W3CJwtFormat(val types: List<String>) : DocumentFormat
+
+/**
+ * Represents an LDP (Linked Data Proof) VC Format for a [eu.europa.ec.eudi.wallet.document.Document]
+ * @property types the credential types (e.g. ["VerifiableCredential", "UniversityDegreeCredential"])
+ */
+data class LdpVcFormat(val types: List<String>) : DocumentFormat

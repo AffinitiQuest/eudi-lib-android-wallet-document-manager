@@ -22,6 +22,7 @@ import eu.europa.ec.eudi.wallet.document.credential.IssuerProvidedCredential
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.LdpVcFormat
 import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import eu.europa.ec.eudi.wallet.document.internal.ApplicationMetadata
 import eu.europa.ec.eudi.wallet.document.internal.applicationMetadata
@@ -35,6 +36,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.buildDocumentStore
 import org.multipaz.mdoc.credential.MdocCredential
+import org.multipaz.sdjwt.credential.KeyBoundLdpVcCredential
 import org.multipaz.sdjwt.credential.KeyBoundW3CJwtVcCredential
 import org.multipaz.sdjwt.credential.W3CJwtVcCredential
 import org.multipaz.securearea.SecureAreaRepository
@@ -107,6 +109,7 @@ class DocumentManagerImpl(
         ) {
             setDocumentMetadataFactory(ApplicationMetadata::create)
             addCredentialImplementation(KeyBoundW3CJwtVcCredential.CREDENTIAL_TYPE, { document -> KeyBoundW3CJwtVcCredential(document) })
+            addCredentialImplementation(KeyBoundLdpVcCredential.CREDENTIAL_TYPE, { document -> KeyBoundLdpVcCredential(document) })
         }
     }
 
@@ -203,6 +206,7 @@ class DocumentManagerImpl(
                             is MsoMdocFormat -> format.docType
                             is SdJwtVcFormat -> format.vct
                             is W3CJwtFormat -> format.types.last()
+                            is LdpVcFormat -> format.types.last()
                         },
                         createdAt = Clock.System.now(),
                         issuerMetadata = issuerMetadata,

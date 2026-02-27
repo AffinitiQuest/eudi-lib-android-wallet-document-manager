@@ -20,10 +20,12 @@ import eu.europa.ec.eudi.wallet.document.CreateDocumentSettings
 import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
 import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
 import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.document.format.LdpVcFormat
 import eu.europa.ec.eudi.wallet.document.format.W3CJwtFormat
 import org.multipaz.credential.SecureAreaBoundCredential
 import org.multipaz.document.Document
 import org.multipaz.mdoc.credential.MdocCredential
+import org.multipaz.sdjwt.credential.KeyBoundLdpVcCredential
 import org.multipaz.sdjwt.credential.KeyBoundSdJwtVcCredential
 import org.multipaz.sdjwt.credential.KeyBoundW3CJwtVcCredential
 import org.multipaz.sdjwt.credential.W3CJwtVcCredential
@@ -63,6 +65,7 @@ fun interface CredentialFactory {
                 is MsoMdocFormat -> MdocCredentialFactory(domain)
                 is SdJwtVcFormat -> SdJwtVcCredentialFactory(domain)
                 is W3CJwtFormat -> JwtVcCredentialFactory(domain)
+                is LdpVcFormat -> LdpVcCredentialFactory(domain)
             }
         }
     }
@@ -184,3 +187,41 @@ class JwtVcCredentialFactory(val domain: String) :
     }
 }
 
+/**
+ * Implementation of CredentialFactory for creating LDP (Linked Data Proof) Verifiable Credentials
+ * according to the W3C VC Data Model v2.0.
+ *
+ * @property domain the domain for the credentials
+ */
+class LdpVcCredentialFactory(val domain: String) :
+    CredentialFactory {
+    /**
+     * Creates LDP VC credentials for a document based on LDP VC format settings.
+     *
+     * @param format the document format, must be an instance of LdpVcFormat
+     * @param document the document that will contain the credentials
+     * @param createDocumentSettings settings for creating the document credentials
+     * @param secureArea the secure area for storing cryptographic keys
+     * @return a list of KeyBoundLdpVcCredential instances bound to the document
+     * @throws IllegalArgumentException if the provided format is not an instance of LdpVcFormat
+     */
+    override suspend fun createCredentials(
+        format: DocumentFormat,
+        document: Document,
+        createDocumentSettings: CreateDocumentSettings,
+        secureArea: SecureArea
+    ): Pair<List<KeyBoundLdpVcCredential>, String?> {
+        require(format is LdpVcFormat) {
+            "Expected ${LdpVcFormat::class}"
+        }
+
+        return KeyBoundLdpVcCredential.createBatch(
+            numberOfCredentials = createDocumentSettings.numberOfCredentials,
+            document = document,
+            domain = domain,
+            secureArea = secureArea,
+            types = format.types,
+            createKeySettings = createDocumentSettings.createKeySettings
+        )
+    }
+}
