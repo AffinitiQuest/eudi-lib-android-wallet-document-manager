@@ -149,7 +149,7 @@ internal fun DocumentFormat.Companion.fromDataItem(dataItem: DataItem): Document
     return when {
         dataItem.hasKey("docType") -> MsoMdocFormat(docType = dataItem["docType"].asTstr)
         dataItem.hasKey("vct") -> SdJwtVcFormat(vct = dataItem["vct"].asTstr)
-        dataItem.hasKey("types") -> W3CJwtFormat(types = listOf(dataItem["types"].asTstr) )
+        dataItem.hasKey("types") -> W3CJwtFormat(types = dataItem["types"].asArray.map { it.asTstr })
         dataItem.hasKey("ldpTypes") -> LdpVcFormat(types = listOf(dataItem["ldpTypes"].asTstr) )
         else -> throw IllegalArgumentException("Unknown DocumentFormat type")
     }
